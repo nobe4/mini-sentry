@@ -6,6 +6,15 @@ This is a dead-simple motion tracking with image ~hosting and notification.
 
 To install, configure and run the script, see [`sentry.py`](https://github.com/nobe4/mini-sentry/blob/master/sentry.py).
 
+# Demo:
+
+[The full gist.](https://gist.github.com/nobe4/c5ca06e7428bb870fa776e938ce7979c)
+
+Result:
+
+![Before](https://gist.githubusercontent.com/nobe4/c5ca06e7428bb870fa776e938ce7979c/raw/828b3aef033a5e9f9e2fa86eb1a30e9334f57307/2017-02-27%252015:42:59.123593.jpg)
+![After](https://gist.githubusercontent.com/nobe4/c5ca06e7428bb870fa776e938ce7979c/raw/828b3aef033a5e9f9e2fa86eb1a30e9334f57307/2017-02-27%252015:45:07.665402.jpg)
+
 # License
 
 This script is released under the [MIT License](https://github.com/nobe4/mini-sentry/blob/master/LICENSE).
