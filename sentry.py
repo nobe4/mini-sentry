@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""This is a dead-simple motion tracking with image ~hosting and notification.
+""" Sentry
+This is a dead-simple motion tracking with image ~hosting and notification.
 The computer's camera is used to take a picture every 5 seconds, then use open
 cv to detect the difference and display the contours.
 
@@ -15,22 +16,31 @@ Installation/Configuration:
     4. Change the slack token and the slack channel below (search for TODO)
 
 Usage:
-    `python turret.py`
-    or 
-    `./turret.py`
+    sentry.py [--training] [--debug]
+    sentry.py (-h | --help)
+    sentry.py --version
 
-    CTRL-c to quit
+Options:
+    -h --help       Show this screen
+    --version       Show version
+    --training      Use training sequence located under export
+    --debug         Display in a window the images used and processed
 
-LICENSE: MIT (see LICENSE file)
+LICENSE:
+    MIT (see LICENSE file)
 """
 
 import os
 import subprocess
 import time
 from datetime import datetime
+from docopt import docopt
 
 import cv2
 import requests
+
+# Get the argument dictionnary
+arguments = docopt(__doc__, version='Sentry 0.1.1')
 
 # Get the gist id from the current directory
 gist_share_url = 'https://gist.github.com/{}'.format(os.path.relpath(".",".."))
