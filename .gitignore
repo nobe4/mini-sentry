@@ -1,2 +1,4 @@
 # Ignore folder with training data
 export/
+
+*.pyc
