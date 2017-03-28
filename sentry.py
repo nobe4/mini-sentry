@@ -114,7 +114,7 @@ def play_feed():
             cv2.imshow("frame",frame)
             cv2.waitKey(int(SPEED))
         else:
-            time.sleep(int(SPEED)*1000)
+            time.sleep(int(SPEED)/1000)
         
         i+=1
 
@@ -129,7 +129,7 @@ def capture_training(number):
     for i in range(0, int(number)):
         (success, frame) = camera.read()
         cv2.imwrite("export/{}.jpg".format(i), frame)
-        time.sleep(int(SPEED)*1000)
+        time.sleep(int(SPEED)/1000)
 
     camera.release()
 
@@ -137,7 +137,7 @@ def capture_training(number):
 arguments = docopt(__doc__, version='Sentry 0.1.1')
 SPEED = arguments["--speed"]
 
-if arguments["--capture"] != None:
+if arguments["--capture"]:
     capture_training(arguments["--capture"])
 else:
     play_feed()
