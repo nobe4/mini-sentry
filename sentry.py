@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""This is a dead-simple motion tracking with image ~hosting and notification.
+""" Sentry
+This is a dead-simple motion tracking with image ~hosting and notification.
 The computer's camera is used to take a picture every 5 seconds, then use open
 cv to detect the difference and display the contours.
 
@@ -15,33 +16,35 @@ Installation/Configuration:
     4. Change the slack token and the slack channel below (search for TODO)
 
 Usage:
-    `python turret.py`
-    or 
-    `./turret.py`
+    sentry.py [--training] [--debug] [(--slack --slack-token=<token> --slack-channel=<channel>)]
+    sentry.py (-h | --help)
+    sentry.py --version
 
-    CTRL-c to quit
+Options:
+    -h --help                   Show this screen
+    --version                   Show version
+    --training                  Use training sequence located under export
+    --debug                     Display in a window the images used and processed
+    --slack                     Send messages for events on slack
+    --slack-token=<token>       OAuth token to interact on slack
+    --slack-channel=<channel>   Which slack channel to interact on
 
-LICENSE: MIT (see LICENSE file)
+LICENSE:
+    MIT (see LICENSE file)
 """
 
 import os
 import subprocess
 import time
 from datetime import datetime
+from docopt import docopt
 
 import cv2
 import requests
+import slack
 
-# Get the gist id from the current directory
-gist_share_url = 'https://gist.github.com/{}'.format(os.path.relpath(".",".."))
-
-# Post a message on the channel with a link to the gist
-slack_api_url = 'https://slack.com/api/chat.postMessage'
-slack_api_params = {
-    'token':   'XXXX', # TODO: Change here !
-    'channel': 'XXXX', # TODO: Change here !
-    'text':    'WARNING: {}'.format(gist_share_url),
-}
+# Get the argument dictionnary
+arguments = docopt(__doc__, version='Sentry 0.1.1')
 
 # Time to get out!
 time.sleep(10)
@@ -109,9 +112,6 @@ while True:
         subprocess.call(["git", "add", filename])
         subprocess.call(["git", "commit", "-m", str(now)])
         subprocess.call(["git", "push"])
-
-        # Notify
-        r = requests.post(slack_api_url, params=slack_api_params)
 
     # Update the last frame
     last_frame = gray_frame
