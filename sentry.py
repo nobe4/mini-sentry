@@ -16,14 +16,17 @@ Installation/Configuration:
     4. Change the slack token and the slack channel below (search for TODO)
 
 Usage:
-    sentry.py [--training] [--debug] [(--slack --slack-token=<token> --slack-channel=<channel>)]
+    sentry.py [--speed=<speed>] [--training] [--debug] [(--slack --slack-token=<token> --slack-channel=<channel>)]
+    sentry.py [--speed=<speed>] [--capture=<number>]
     sentry.py (-h | --help)
     sentry.py --version
 
 Options:
     -h --help                   Show this screen
     --version                   Show version
+    --speed=<speed>             Set playback or record speed in millisecond [default: 2000]
     --training                  Use training sequence located under export
+    --capture=<number>          Capture and save a set of images
     --debug                     Display in a window the images used and processed
     --slack                     Send messages for events on slack
     --slack-token=<token>       OAuth token to interact on slack
@@ -43,35 +46,15 @@ import cv2
 import requests
 import slack
 
-# Get the argument dictionnary
-arguments = docopt(__doc__, version='Sentry 0.1.1')
+SPEED = 0
 
-# Time to get out!
-time.sleep(10)
-
-# Use the video capture
-camera = cv2.VideoCapture(0)
-
-# Last frame
-last_frame = None
-
-while True:
-
-    # Read a new frame from the camera
-    (success, frame) = camera.read()
-
-    # Break on camera not working
-    if not success:
-        raise Exception('Couldn\'t get the webcam to work')
-
-    # Convert the frame to a blurred gray equivalent for contours detection
+def process_frame(frame, last_frame):
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray_frame = cv2.GaussianBlur(gray_frame, (21, 21), 0)
 
     # Init the first frame
     if last_frame is None:
-        last_frame = gray_frame
-        continue
+        return gray_frame
 
     # Compute the diff With the last frame
     frameDelta = cv2.absdiff(last_frame, gray_frame)
@@ -101,20 +84,60 @@ while True:
 
         # Generate filename
         now = datetime.now()
-        filename = '{}.jpg'.format(now)
-
         print 'Movement detected at {}'.format(now)
 
         # Save the image
-        cv2.imwrite(filename, frame)
-
-        # Add the new file to the gist
-        subprocess.call(["git", "add", filename])
-        subprocess.call(["git", "commit", "-m", str(now)])
-        subprocess.call(["git", "push"])
+        result = cv2.imwrite('detected/{:%d%m%y%H%M%S}.jpg'.format(now), frame)
 
     # Update the last frame
-    last_frame = gray_frame
-    time.sleep(5)
+    return gray_frame
 
-camera.release()
+def play_feed():
+    cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
+    camera = cv2.VideoCapture(0)
+    last_frame = None
+
+    i = 0
+    while True:
+        frame = None
+        if arguments["--training"]:
+            frame = cv2.imread("export/{}.jpg".format(i))
+            if frame is None:
+                return
+        else:
+            (success, frame) = camera.read()
+
+        # Process the frame
+        last_frame = process_frame(frame, last_frame)
+
+        if arguments["--debug"]:
+            cv2.imshow("frame",frame)
+            cv2.waitKey(int(SPEED))
+        else:
+            time.sleep(int(SPEED)*1000)
+        
+        i+=1
+
+
+    camera.release()
+
+def capture_training(number):
+    # Use the video capture
+    camera = cv2.VideoCapture(0)
+
+    # Capture number images
+    for i in range(0, int(number)):
+        (success, frame) = camera.read()
+        cv2.imwrite("export/{}.jpg".format(i), frame)
+        time.sleep(int(SPEED)*1000)
+
+    camera.release()
+
+# Get the argument dictionnary
+arguments = docopt(__doc__, version='Sentry 0.1.1')
+SPEED = arguments["--speed"]
+
+if arguments["--capture"] != None:
+    capture_training(arguments["--capture"])
+else:
+    play_feed()
