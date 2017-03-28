@@ -93,9 +93,11 @@ def process_frame(frame, last_frame):
     return gray_frame
 
 def play_feed():
-    cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
     camera = cv2.VideoCapture(0)
     last_frame = None
+
+    if arguments["--debug"]:
+        cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
 
     i = 0
     while True:
