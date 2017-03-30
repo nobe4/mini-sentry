@@ -15,8 +15,20 @@ class slack_instance():
             'token': self.token,
             'channel': self.channel,
             'text': text,
-            'as_user': "true"
+            'as_user': "false",
+            'username': "Mini-Sentry",
+            'icon_url': "https://wiki.teamfortress.com/w/images/e/ea/Red_Mini_Sentry.png"
         }
         
         r = requests.post(self.SLACK_API_LOCATION+self.SLACK_API_MESSAGE,params=slack_message_call_args)
-        print r
+
+    def post_image(self, image, comment, title):
+        # Compose arguments
+        slack_message_call_args = {
+            'token': self.token,
+            'channels': self.channel,
+            "title": title,
+            "initial_comment": comment
+        }
+        
+        r = requests.post(self.SLACK_API_LOCATION+self.SLACK_API_FILES,params=slack_message_call_args, files=dict(file=image))
