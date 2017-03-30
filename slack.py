@@ -10,6 +10,7 @@ class slack_instance():
         self.channel = channel
 
     def post_message(self, text):
+        """ Post a message on the current slack session """
         # Compose arguments
         slack_message_call_args = {
             'token': self.token,
@@ -23,6 +24,7 @@ class slack_instance():
         r = requests.post(self.SLACK_API_LOCATION+self.SLACK_API_MESSAGE,params=slack_message_call_args)
 
     def post_image(self, image, comment, title):
+        """ Post an image on the current slack session, will also add one comment and title """
         # Compose arguments
         slack_message_call_args = {
             'token': self.token,

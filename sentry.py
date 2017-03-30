@@ -51,6 +51,7 @@ SPEED = 0
 SLACK = None
 
 def detected(frame):
+    """ Movement was detected, send notification to slack, get the frame where the movement was detected"""
     now = datetime.now()
     image_name = 'detected/{:%d%m%y%H%M%S}.jpg'.format(now)
     result = cv2.imwrite(image_name, frame)
@@ -67,6 +68,12 @@ def detected(frame):
 # The idea is to estimate movement based on the analysis on three frames to
 # eliminate ghosting artifacts.
 def process_frame(frame_tm1, frame_t, frame_tp1):
+    """
+    Process the frame to extract movement
+    Get previous, under analysis, and next frame as arguments
+    Return gray scale version of the next frame and boolean corresponding to movement detection
+    """
+
     gray_frame = cv2.cvtColor(frame_tp1, cv2.COLOR_BGR2GRAY)
 
     if frame_tm1 is None or frame_t is None:
@@ -96,6 +103,7 @@ def process_frame(frame_tm1, frame_t, frame_tp1):
     return (gray_frame, False)
 
 def play_feed():
+    """ Play the video feed, either from file or from camera """
     camera = cv2.VideoCapture(0)
     frame_tm1 = None
     frame_t = None
@@ -136,6 +144,7 @@ def play_feed():
     camera.release()
 
 def capture_training(number):
+    """ Capture a define number of training frames in order to be used later """
     # Use the video capture
     camera = cv2.VideoCapture(0)
 
@@ -151,6 +160,7 @@ def capture_training(number):
 arguments = docopt(__doc__, version='Sentry 0.1.1')
 SPEED = arguments["--speed"]
 
+# Create the slack instance if needs be
 if arguments["--slack"]:
     SLACK = slack.slack_instance(arguments["--slack-token"], arguments["--slack-channel"])
 
