@@ -48,53 +48,49 @@ import slack
 
 SPEED = 0
 
-def process_frame(frame, last_frame):
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray_frame = cv2.GaussianBlur(gray_frame, (21, 21), 0)
+def detected(frame):
+    now = datetime.now()
+    print "Alert! A red spy is in the base!! At: {}".format(now)
 
-    # Init the first frame
-    if last_frame is None:
-        return gray_frame
+    result = cv2.imwrite('detected/{:%d%m%y%H%M%S}.jpg'.format(now), frame)
 
-    # Compute the diff With the last frame
-    frameDelta = cv2.absdiff(last_frame, gray_frame)
+# This method is based on the work of Kameda, Y. & Minoh, M. "A human motion
+# estimation method using 3-successive video frames."
+# The idea is to estimate movement based on the analysis on three frames to
+# eliminate ghosting artifacts.
+def process_frame(frame_tm1, frame_t, frame_tp1):
+    gray_frame = cv2.cvtColor(frame_tp1, cv2.COLOR_BGR2GRAY)
 
-    # Prepare the threshold for finding contours
-    thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
-    thresh = cv2.dilate(thresh, None, iterations=2)
+    if frame_tm1 is None or frame_t is None:
+        return (gray_frame, False)
 
-    # Get all contours on the threshold image
-    (_, cnts, _) = cv2.findContours(thresh.copy(),
-                                    cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    # Get the difference between t-1 and t, and t and t+1
+    diff_image_im1 = cv2.absdiff(frame_tm1, frame_t)
+    diff_image_i = cv2.absdiff(frame_t, gray_frame)
 
-    movement_detected = False
+    # And between the wo previous images
+    double_diff = cv2.bitwise_and(diff_image_im1,diff_image_i);
 
-    # Detect significant contours
-    for c in cnts:
-        if cv2.contourArea(c) < 1000:
-            continue
+    # Clean the result a bit
+    ret, thres_double_diff = cv2.threshold(double_diff, 40, 255, cv2.THRESH_BINARY)
 
-        # Add the contour to the image
-        (x, y, w, h) = cv2.boundingRect(c)
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 0), 2)
-        movement_detected = True
-
-    # Save the image and notify the user
-    if movement_detected:
-
-        # Generate filename
-        now = datetime.now()
-        print 'Movement detected at {}'.format(now)
-
-        # Save the image
-        result = cv2.imwrite('detected/{:%d%m%y%H%M%S}.jpg'.format(now), frame)
-
-    # Update the last frame
-    return gray_frame
+    # Enough pixel changed but not too much (aka. background cahnge)
+    number_changed = cv2.countNonZero(thres_double_diff)
+    height, width = thres_double_diff.shape
+    nb_pixel = height*width
+    if number_changed > nb_pixel * 0.01 and number_changed < nb_pixel * 0.4:
+        if arguments["--debug"]:
+            cv2.imshow("frame",thres_double_diff)
+            cv2.waitKey(0)
+        return (gray_frame, True)
+    
+    return (gray_frame, False)
 
 def play_feed():
     camera = cv2.VideoCapture(0)
-    last_frame = None
+    frame_tm1 = None
+    frame_t = None
 
     if arguments["--debug"]:
         cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
@@ -110,7 +106,15 @@ def play_feed():
             (success, frame) = camera.read()
 
         # Process the frame
-        last_frame = process_frame(frame, last_frame)
+        temp, detection = process_frame(frame_tm1, frame_t, frame)
+        
+        # Alert! A red spy is in the base!!
+        if detection:
+            detected(frame_t)
+
+        
+        frame_tm1 = frame_t;
+        frame_t = temp
 
         if arguments["--debug"]:
             cv2.imshow("frame",frame)
