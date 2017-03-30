@@ -1,0 +1,7 @@
+# Ignore folder with training data
+export/
+
+# Ignore result folder
+detected/
+
+*.pyc
