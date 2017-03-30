@@ -16,7 +16,7 @@ Installation/Configuration:
     4. Change the slack token and the slack channel below (search for TODO)
 
 Usage:
-    sentry.py [--speed=<speed>] [--training] [--debug] [(--slack --slack-token=<token> --slack-channel=<channel>)]
+    sentry.py [--speed=<speed>] [--training] [--debug] [(--slack --slack-token=<token> --slack-channel=<channel>)] [--slack-blind]
     sentry.py [--speed=<speed>] [--capture=<number>]
     sentry.py (-h | --help)
     sentry.py --version
@@ -31,12 +31,13 @@ Options:
     --slack                     Send messages for events on slack
     --slack-token=<token>       OAuth token to interact on slack
     --slack-channel=<channel>   Which slack channel to interact on
+    --slack-blind               Only send message notification to slack (no images)
 
 LICENSE:
     MIT (see LICENSE file)
 """
 
-import os
+import os, sys
 import subprocess
 import time
 from datetime import datetime
@@ -47,12 +48,19 @@ import requests
 import slack
 
 SPEED = 0
+SLACK = None
 
 def detected(frame):
     now = datetime.now()
-    print "Alert! A red spy is in the base!! At: {}".format(now)
+    image_name = 'detected/{:%d%m%y%H%M%S}.jpg'.format(now)
+    result = cv2.imwrite(image_name, frame)
 
-    result = cv2.imwrite('detected/{:%d%m%y%H%M%S}.jpg'.format(now), frame)
+    if SLACK:
+        if arguments["--slack-blind"]:
+            SLACK.post_message("Alert! A red spy is in the base!! At: {}".format(now))
+        else:
+            image = open(image_name, "rb")
+            SLACK.post_image(image, "Alert! A red spy is in the base!!", "{}".format(now))
 
 # This method is based on the work of Kameda, Y. & Minoh, M. "A human motion
 # estimation method using 3-successive video frames."
@@ -75,7 +83,7 @@ def process_frame(frame_tm1, frame_t, frame_tp1):
     # Clean the result a bit
     ret, thres_double_diff = cv2.threshold(double_diff, 40, 255, cv2.THRESH_BINARY)
 
-    # Enough pixel changed but not too much (aka. background cahnge)
+    # Enough pixel changed but not too much (aka. background change)
     number_changed = cv2.countNonZero(thres_double_diff)
     height, width = thres_double_diff.shape
     nb_pixel = height*width
@@ -142,6 +150,9 @@ def capture_training(number):
 # Get the argument dictionnary
 arguments = docopt(__doc__, version='Sentry 0.1.1')
 SPEED = arguments["--speed"]
+
+if arguments["--slack"]:
+    SLACK = slack.slack_instance(arguments["--slack-token"], arguments["--slack-channel"])
 
 if arguments["--capture"]:
     capture_training(arguments["--capture"])
