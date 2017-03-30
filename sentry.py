@@ -2,18 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """ Sentry
-This is a dead-simple motion tracking with image ~hosting and notification.
-The computer's camera is used to take a picture every 5 seconds, then use open
-cv to detect the difference and display the contours.
-
-When a contour is found, a picture is uploaded to gist and a message is sent to
-slack. The only configuration required is for those two tasks.
+This is a dead-simple movement detection application with slack notification.
+The computer's camera is used to take a picture at a given speed, then use opencv
+to detect movement.
+When a movement is detected, a picture is uploaded to slack.
 
 Installation/Configuration:
-    1. Clone the gist repository, keeping its name
-    2. Copy this script inside the gist folder
-    3. `pip install opencv-python requests`
-    4. Change the slack token and the slack channel below (search for TODO)
+    1. `pip install opencv-python requests docopt`
+    2. If you want slack integration set your token and channel accordingly in the command line arguments
 
 Usage:
     sentry.py [--speed=<speed>] [--training] [--debug] [(--slack --slack-token=<token> --slack-channel=<channel>)] [--slack-blind]
