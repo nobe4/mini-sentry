@@ -1,36 +1,48 @@
+#/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import requests
+from collections import OrderedDict
 
-class slack_instance():
-    SLACK_API_LOCATION = "https://slack.com/api/"
-    SLACK_API_MESSAGE = "chat.postMessage"
-    SLACK_API_FILES = "files.upload"
+def slack_post(token, channel, blind=False):
+    '''Post a slack message possibly with a picture. Prepare a function that
+    will be called later by the main script.'''
+    slack_api_url = 'https://slack.com/api/{}'
 
-    def __init__(self, token, channel):
-        self.token = token
-        self.channel = channel
+    params = {
+        'token': token,
+        'channel': channel,
+    }
 
-    def post_message(self, text):
-        """ Post a message on the current slack session """
-        # Compose arguments
-        slack_message_call_args = {
-            'token': self.token,
-            'channel': self.channel,
-            'text': text,
-            'as_user': "false",
-            'username': "Mini-Sentry",
-            'icon_url': "https://wiki.teamfortress.com/w/images/e/ea/Red_Mini_Sentry.png"
-        }
-        
-        r = requests.post(self.SLACK_API_LOCATION+self.SLACK_API_MESSAGE,params=slack_message_call_args)
+    if blind:
+        params.update({
+            'as_user': 'false',
+            'username': 'Mini-Sentry',
+            'icon_url': 'https://wiki.teamfortress.com/w/images/e/ea/Red_Mini_Sentry.png'
+        })
+        url = slack_api_url.format('chat.postMessage')
+    else:
+        params['channels'] = params.pop('channel')
+        url = slack_api_url.format('files.upload')
 
-    def post_image(self, image, comment, title):
-        """ Post an image on the current slack session, will also add one comment and title """
-        # Compose arguments
-        slack_message_call_args = {
-            'token': self.token,
-            'channels': self.channel,
-            "title": title,
-            "initial_comment": comment
-        }
-        
-        r = requests.post(self.SLACK_API_LOCATION+self.SLACK_API_FILES,params=slack_message_call_args, files=dict(file=image))
+    def make_request(*args):
+        '''Will make the request, use the prepared params.'''
+        request_args = OrderedDict(
+            url=url,
+            params=params,
+        )
+
+        if blind:
+            request_args['params'].update({
+                'text': args[0]
+            })
+        else:
+            request_args['params'].update({
+                'title': args[0],
+                'initial_comment': args[1],
+            })
+            request_args['files'] = dict(file=args[2])
+
+        response = requests.post(**request_args)
+
+    return make_request
